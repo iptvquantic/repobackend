@@ -1,7 +1,7 @@
 {
   "name": "nexus-hub-backend",
   "version": "1.0.0",
-  "description": "NEXUS HUB v3.2 - Backend Proxy para Dashboard Financeiro",
+  "description": "NEXUS HUB v3.2 - Backend Proxy",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
