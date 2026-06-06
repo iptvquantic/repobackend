@@ -1,8 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
-const apiRoutes = require('./api');  // <-- na raiz, não em routes/
+const apiRoutes = require('./api');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,10 +45,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'NEXUS HUB Backend v1.0',
+    endpoints: [
+      '/health',
+      '/api/prices', '/api/ticker', '/api/global', '/api/fng',
+      '/api/rsi', '/api/usdbrl', '/api/trending',
+      '/api/heatmap', '/api/top100', '/api/news/:cat'
+    ]
+  });
 });
 
 app.use((err, req, res, next) => {
