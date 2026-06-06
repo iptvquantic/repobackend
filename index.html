@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS HUB v3.2 — Inteligência de Mercado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a; --bg2: #111827; --bg3: #1a2332; --text: #e2e8f0;
+  --text2: #94a3b8; --accent: #3b82f6; --accent2: #8b5cf6; --success: #22c55e;
+  --danger: #ef4444; --warning: #f59e0b; --border: #1e293b; --card: #0f172a;
+  --sidebar: 230px; --bottomnav: 64px;
+}
+[data-theme="light"] { --bg: #f8fafc; --bg2: #f1f5f9; --bg3: #e2e8f0; --text: #0f172a; --text2: #64748b; --border: #cbd5e1; --card: #ffffff; --sidebar: #ffffff; }
+[data-theme="cyber"] { --accent: #00f0ff; --accent2: #ff00a0; --bg: #050510; --bg2: #0a0a20; --bg3: #101030; --text: #e0e0ff; --border: #1a1a40; --card: #080818; }
+[data-theme="matrix"] { --accent: #00ff41; --accent2: #008f11; --bg: #000000; --bg2: #0a0a0a; --bg3: #111111; --text: #00ff41; --text2: #008f11; --border: #1a1a1a; --card: #050505; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar); background: var(--bg2); border-right: 1px solid var(--border);
+  position: fixed; height: 100vh; left: 0; top: 0; z-index: 100; transition: transform .3s;
+  display: flex; flex-direction: column; padding: 16px 0;
+}
+.sidebar .logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.sidebar .logo svg { width: 32px; height: 32px; }
+.sidebar .logo span { font-weight: 800; font-size: 18px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.sidebar nav { flex: 1; overflow-y: auto; }
+.sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: var(--text2); text-decoration: none; font-size: 13px; font-weight: 500; transition: .2s; border-left: 3px solid transparent; }
+.sidebar nav a:hover, .sidebar nav a.active { color: var(--accent); background: rgba(59,130,246,.08); border-left-color: var(--accent); }
+.sidebar nav a svg { width: 18px; height: 18px; opacity: .7; }
+.sidebar .theme-toggle { padding: 16px 20px; border-top: 1px solid var(--border); }
+.sidebar .theme-toggle select { width: 100%; padding: 8px; background: var(--bg3); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 12px; }
+
+.main { margin-left: var(--sidebar); flex: 1; padding: 20px 24px; padding-bottom: calc(var(--bottomnav) + 20px); }
+
+/* Bottom Nav Mobile */
+.bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottomnav);
+  background: var(--bg2); border-top: 1px solid var(--border); z-index: 99;
+  justify-content: space-around; align-items: center;
+}
+.bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text2); text-decoration: none; font-size: 10px; }
+.bottom-nav a svg { width: 22px; height: 22px; }
+.bottom-nav a.active { color: var(--accent); }
+
+/* Ticker */
+.ticker-wrap { position: fixed; top: 0; left: var(--sidebar); right: 0; height: 36px; background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; z-index: 50; display: flex; align-items: center; }
+.ticker { display: flex; gap: 40px; white-space: nowrap; animation: ticker 40s linear infinite; padding-left: 100%; }
+.ticker:hover { animation-play-state: paused; }
+.ticker-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.ticker-item .sym { color: var(--text2); }
+.ticker-item .price { color: var(--text); }
+.ticker-item .chg { font-size: 11px; }
+.ticker-item .chg.up { color: var(--success); }
+.ticker-item .chg.down { color: var(--danger); }
+@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.card-sub { font-size: 11px; color: var(--text2); }
+
+/* Grid */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+/* Crypto Cards */
+.crypto-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: .2s; }
+.crypto-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.crypto-card .icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700; font-size: 14px; color: #fff; }
+.crypto-card .name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.crypto-card .price { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.crypto-card .change { font-size: 12px; font-weight: 600; }
+.crypto-card .change.up { color: var(--success); }
+.crypto-card .change.down { color: var(--danger); }
+
+/* Fear & Greed */
+.fng-gauge { width: 160px; height: 80px; margin: 0 auto; position: relative; }
+.fng-gauge svg { width: 100%; height: 100%; }
+.fng-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 28px; font-weight: 800; }
+.fng-label { text-align: center; font-size: 12px; font-weight: 600; margin-top: 8px; }
+
+/* Heatmap */
+.heatmap { display: flex; flex-wrap: wrap; gap: 3px; }
+.heatmap-item { flex: 1 1 calc(20% - 3px); min-width: 80px; padding: 8px 4px; border-radius: 4px; text-align: center; font-size: 11px; font-weight: 600; }
+.heatmap-item .h-name { font-size: 10px; opacity: .8; margin-bottom: 2px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 10px 8px; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:hover td { background: rgba(59,130,246,.04); }
+.up { color: var(--success); } .down { color: var(--danger); }
+
+/* TradingView */
+.tv-container { width: 100%; height: 500px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+
+/* News */
+.news-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.news-item:last-child { border-bottom: none; }
+.news-thumb { width: 80px; height: 60px; background: var(--bg3); border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text2); }
+.news-content { flex: 1; }
+.news-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
+.news-meta { font-size: 11px; color: var(--text2); }
+
+/* Chat IA */
+.chat-widget { position: fixed; bottom: 24px; right: 24px; z-index: 200; }
+.chat-btn { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(59,130,246,.4); display: flex; align-items: center; justify-content: center; transition: .2s; }
+.chat-btn:hover { transform: scale(1.05); }
+.chat-panel { position: absolute; bottom: 70px; right: 0; width: 360px; max-height: 500px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.chat-panel.open { display: flex; }
+.chat-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.chat-header h4 { font-size: 14px; }
+.chat-header button { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; }
+.chat-body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+.chat-msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
+.chat-msg.bot { align-self: flex-start; background: var(--bg3); color: var(--text); }
+.chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.chat-input input { flex: 1; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; }
+.chat-input button { padding: 10px 16px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; font-size: 12px; }
+.chat-voice { display: flex; gap: 6px; padding: 0 12px 12px; }
+.chat-voice button { flex: 1; padding: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 11px; cursor: pointer; }
+
+/* ETF Flows */
+.etf-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.etf-label { width: 60px; font-size: 12px; font-weight: 600; }
+.etf-track { flex: 1; height: 24px; background: var(--bg3); border-radius: 4px; overflow: hidden; position: relative; }
+.etf-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+.etf-fill.btc { background: linear-gradient(90deg, #f7931a, #ffae34); }
+.etf-fill.eth { background: linear-gradient(90deg, #627eea, #8b9ef5); }
+.etf-fill.sol { background: linear-gradient(90deg, #9945ff, #b876ff); }
+.etf-value { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+/* Polymarket */
+.poly-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.poly-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.poly-img { width: 100%; height: 100px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 11px; }
+.poly-info { padding: 10px; }
+.poly-q { font-size: 12px; font-weight: 600; margin-bottom: 6px; line-height: 1.3; }
+.poly-odds { font-size: 11px; color: var(--text2); }
+
+/* On-Chain Gauge */
+.risk-gauge { width: 140px; height: 70px; margin: 0 auto; position: relative; }
+.risk-gauge svg { width: 100%; height: 100%; }
+.risk-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: 800; }
+.risk-label { text-align: center; font-size: 11px; font-weight: 600; margin-top: 6px; }
+
+/* Macro Countdown */
+.countdown { display: flex; gap: 12px; justify-content: center; margin: 16px 0; }
+.countdown-item { text-align: center; }
+.countdown-item .num { font-size: 28px; font-weight: 800; color: var(--accent); }
+.countdown-item .lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; }
+
+/* War Timeline */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.timeline-item { position: relative; margin-bottom: 16px; padding-left: 16px; }
+.timeline-item::before { content: ''; position: absolute; left: -17px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+.timeline-date { font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 2px; }
+.timeline-text { font-size: 12px; line-height: 1.5; }
+
+/* Page system */
+.page { display: none; animation: fadeIn .3s; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-6 { grid-template-columns: repeat(3, 1fr); }
+  .poly-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 16px; padding-bottom: calc(var(--bottomnav) + 16px); padding-top: 52px; }
+  .ticker-wrap { left: 0; top: 36px; }
+  .bottom-nav { display: flex; }
+  .grid-2, .grid-3, .grid-4, .grid-6 { grid-template-columns: 1fr; }
+  .poly-grid { grid-template-columns: 1fr; }
+  .tv-container { height: 350px; }
+  .chat-panel { width: calc(100vw - 32px); right: -12px; }
+  .mobile-menu-btn { display: block; position: fixed; top: 8px; left: 8px; z-index: 101; background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; cursor: pointer; }
+}
+@media (min-width: 769px) {
+  .mobile-menu-btn { display: none; }
+}
+
+/* Loading */
+.skeleton { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%); background-size: 200% 100%; animation: skeleton 1.5s infinite; border-radius: 4px; }
+@keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+</style>
+</head>
+<body data-theme="dark">
+
+<button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" fill="none"><defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs><circle cx="16" cy="16" r="14" stroke="url(#lg)" stroke-width="2"/><path d="M10 16 L16 10 L22 16 L16 22 Z" fill="url(#lg)"/></svg>
+      <span>NEXUS HUB</span>
+    </div>
+    <nav>
+      <a href="#dashboard" class="active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="#grafico" data-page="grafico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Gráfico BTC</a>
+      <a href="#indices" data-page="indices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Índices & Câmbio</a>
+      <a href="#top100" data-page="top100"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Top 100 Mundial</a>
+      <a href="#noticias" data-page="noticias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>Notícias</a>
+      <a href="#baleias" data-page="baleias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>Baleias</a>
+      <a href="#etf" data-page="etf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M2 11h20"/></svg>ETF Flows</a>
+      <a href="#polymarket" data-page="polymarket"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Polymarket</a>
+      <a href="#ianews" data-page="ianews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 16a4 4 0 0 0 0-8"/><path d="M12 8v8"/></svg>IA Notícias</a>
+      <a href="#onchain" data-page="onchain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>On-Chain</a>
+      <a href="#macro" data-page="macro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Macro</a>
+      <a href="#guerra" data-page="guerra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22l2-2"/><path d="M6 18l2-2"/><path d="M10 14l2-2"/><path d="M14 10l2-2"/><path d="M18 6l2-2"/><path d="M6 18l12-12"/></svg>Guerra</a>
+      <a href="#newsguerra" data-page="newsguerra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg>Notícias Guerra</a>
+    </nav>
+    <div class="theme-toggle">
+      <select id="themeSelect" onchange="document.body.setAttribute('data-theme',this.value); localStorage.setItem('nexus-theme',this.value);">
+        <option value="dark">🌙 Dark</option>
+        <option value="light">☀️ Light</option>
+        <option value="cyber">⚡ Cyber</option>
+        <option value="matrix">🟢 Matrix</option>
+      </select>
+    </div>
+  </aside>
+
+  <div class="ticker-wrap" id="tickerWrap"><div class="ticker" id="ticker"></div></div>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="page active">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Dashboard</h2>
+      <div class="grid grid-6" id="dashPrices">
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+        <div class="crypto-card"><div class="skeleton" style="height:80px;"></div></div>
+      </div>
+      <div class="grid grid-3" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Fear & Greed</span><span class="card-sub">BTC</span></div>
+          <div class="fng-gauge" id="fngGauge"></div>
+          <div class="fng-label" id="fngLabel">—</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Dominância</span><span class="card-sub">Market Cap</span></div>
+          <div id="dominance" style="font-size:13px;line-height:1.8;">
+            <div class="skeleton" style="height:100px;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Market Cap / Volume</span><span class="card-sub">Global</span></div>
+          <div id="globalStats" style="font-size:13px;line-height:1.8;">
+            <div class="skeleton" style="height:100px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-2" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Mapa de Calor</span><span class="card-sub">Top 50</span></div>
+          <div class="heatmap" id="heatmap"><div class="skeleton" style="height:120px;width:100%;"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Trending</span><span class="card-sub">CoinGecko</span></div>
+          <div id="trending" style="font-size:13px;"><div class="skeleton" style="height:120px;"></div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><span class="card-title">RSI Bitcoin</span>
+          <select id="rsiTf" onchange="loadDashRsi(this.value)" style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:12px;">
+            <option value="1d">1D</option><option value="4h">4H</option><option value="1h">1H</option><option value="15m">15M</option><option value="1w">1W</option>
+          </select>
+        </div>
+        <div id="rsiChart" style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO BTC -->
+    <div id="grafico" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Gráfico BTC</h2>
+      <div class="tv-container" id="tvChart"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><span class="card-title">RSI (1D)</span></div>
+        <div id="chartRsi" style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- ÍNDICES & CÂMBIO -->
+    <div id="indices" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Índices & Câmbio</h2>
+      <div class="grid grid-4" id="indicesGrid">
+        <div class="card"><div class="skeleton" style="height:60px;"></div></div>
+        <div class="card"><div class="skeleton" style="height:60px;"></div></div>
+        <div class="card"><div class="skeleton" style="height:60px;"></div></div>
+        <div class="card"><div class="skeleton" style="height:60px;"></div></div>
+      </div>
+    </div>
+
+    <!-- TOP 100 -->
+    <div id="top100" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Top 100 Mundial</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table id="top100Table">
+            <thead><tr><th>#</th><th>Ativo</th><th>Preço</th><th>24h</th><th>7d</th><th>Cap</th><th>Volume</th></tr></thead>
+            <tbody><tr><td colspan="7" style="text-align:center;color:var(--text2);">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTÍCIAS -->
+    <div id="noticias" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Notícias</h2>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button onclick="STATE.newsCat='crypto';loadNews()" class="news-filter active" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:12px;cursor:pointer;">Crypto</button>
+        <button onclick="STATE.newsCat='ai';loadNews()" class="news-filter" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">IA</button>
+        <button onclick="STATE.newsCat='macro';loadNews()" class="news-filter" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Macro</button>
+        <button onclick="STATE.newsCat='war';loadNews()" class="news-filter" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Guerra</button>
+      </div>
+      <div id="newsList"><div class="skeleton" style="height:200px;"></div></div>
+    </div>
+
+    <!-- BALEIAS -->
+    <div id="baleias" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Baleias</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Rastreadores</span></div>
+          <div style="font-size:13px;line-height:2;">
+            <div>🐋 <a href="https://whale-alert.io" target="_blank" style="color:var(--accent);">Whale Alert</a></div>
+            <div>🐋 <a href="https://whalemap.io" target="_blank" style="color:var(--accent);">Whalemap</a></div>
+            <div>🐋 <a href="https://cryptoquant.com" target="_blank" style="color:var(--accent);">CryptoQuant</a></div>
+            <div>🐋 <a href="https://glassnode.com" target="_blank" style="color:var(--accent);">Glassnode</a></div>
+            <div>🐋 <a href="httpss://santiment.net" target="_blank" style="color:var(--accent);">Santiment</a></div>
+            <div>🐋 <a href="https://lookintobitcoin.com" target="_blank" style="color:var(--accent);">LookIntoBitcoin</a></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alertas Recentes</span></div>
+          <div id="whaleAlerts" style="font-size:12px;line-height:1.8;color:var(--text2);">
+            <p>Aguardando dados on-chain...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ETF FLOWS -->
+    <div id="etf" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">ETF Flows</h2>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Fluxo Diário (US$ M)</span></div>
+        <div id="etfFlows">
+          <div class="etf-bar"><div class="etf-label">BTC</div><div class="etf-track"><div class="etf-fill btc" style="width:78%"><span class="etf-value">+$312M</span></div></div></div>
+          <div class="etf-bar"><div class="etf-label">ETH</div><div class="etf-track"><div class="etf-fill eth" style="width:45%"><span class="etf-value">+$98M</span></div></div></div>
+          <div class="etf-bar"><div class="etf-label">SOL</div><div class="etf-track"><div class="etf-fill sol" style="width:12%"><span class="etf-value">+$24M</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POLYMARKET -->
+    <div id="polymarket" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Polymarket</h2>
+      <div class="poly-grid" id="polyGrid">
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">Quem vencerá as eleições EUA 2028?</div><div class="poly-odds">Trump 42% | Harris 31% | Outro 27%</div></div></div>
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">BTC acima de $150K em 2026?</div><div class="poly-odds">Sim 38% | Não 62%</div></div></div>
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">Fed cortará juros em junho?</div><div class="poly-odds">Sim 25% | Não 75%</div></div></div>
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">Guerra Israel-Irã escalará?</div><div class="poly-odds">Sim 55% | Não 45%</div></div></div>
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">ETH ETF aprovado em 2026?</div><div class="poly-odds">Sim 72% | Não 28%</div></div></div>
+        <div class="poly-card"><div class="poly-img">Imagem</div><div class="poly-info"><div class="poly-q">SOL ETF aprovado em 2026?</div><div class="poly-odds">Sim 45% | Não 55%</div></div></div>
+      </div>
+    </div>
+
+    <!-- IA NOTÍCIAS -->
+    <div id="ianews" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">IA Notícias</h2>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Feed Curado</span></div>
+        <div id="iaNews" style="font-size:13px;line-height:1.8;">
+          <p><strong>OpenAI</strong> anuncia GPT-5 com capacidade multimodal avançada e custo reduzido.</p>
+          <p><strong>Anthropic</strong> lança Claude 4 com contexto de 1M tokens e raciocínio melhorado.</p>
+          <p><strong>Google</strong> integra Gemini 2.5 Pro em todos os produtos Workspace.</p>
+          <p><strong>Meta</strong> open-source Llama 4 com 400B parâmetros e performance superior.</p>
+          <p><strong>xAI</strong> expande Colossus para 200K GPUs para treinamento de Grok 3.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ON-CHAIN -->
+    <div id="onchain" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">On-Chain</h2>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Risk Score</span></div>
+          <div class="risk-gauge" id="riskGauge"></div>
+          <div class="risk-label" id="riskLabel">Neutral</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Métricas</span></div>
+          <div style="font-size:12px;line-height:2;">
+            <div>MVRV Z-Score: <span style="color:var(--accent);">2.14</span></div>
+            <div>NVT Ratio: <span style="color:var(--accent);">72.5</span></div>
+            <div>SOPR: <span style="color:var(--success);">1.02</span></div>
+            <div>Exchange Reserves: <span style="color:var(--danger);">2.3M BTC</span></div>
+            <div>Long-Term Holders: <span style="color:var(--success);">68%</span></div>
+            <div>Hash Rate: <span style="color:var(--accent);">642 EH/s</span></div>
+            <div>Difficulty: <span style="color:var(--text2);">83.7 T</span></div>
+            <div>Fees (24h): <span style="color:var(--warning);">12.4 BTC</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Nível de Risco</span></div>
+          <div style="font-size:12px;line-height:2;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--success);"></span> Baixo: 0-25</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--warning);"></span> Médio: 26-50</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#f97316;"></span> Alto: 51-75</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--danger);"></span> Extremo: 76-100</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MACRO -->
+    <div id="macro" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Macro</h2>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Próxima Reunião FOMC</span></div>
+        <div class="countdown" id="fomcCountdown">
+          <div class="countdown-item"><div class="num" id="cdD">--</div><div class="lbl">Dias</div></div>
+          <div class="countdown-item"><div class="num" id="cdH">--</div><div class="lbl">Horas</div></div>
+          <div class="countdown-item"><div class="num" id="cdM">--</div><div class="lbl">Min</div></div>
+          <div class="countdown-item"><div class="num" id="cdS">--</div><div class="lbl">Seg</div></div>
+        </div>
+      </div>
+      <div class="grid grid-2" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Taxa de Juros (Fed)</span></div>
+          <div style="font-size:13px;line-height:2;">
+            <div>Atual: <strong style="color:var(--accent);">5.25% - 5.50%</strong></div>
+            <div>Próxima decisão: <strong>18 de junho de 2026</strong></div>
+            <div>Expectativa mercado: <span style="color:var(--success);">Manter</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">M2 Global</span></div>
+          <div style="font-size:13px;line-height:2;">
+            <div>Supply: <strong style="color:var(--accent);">$105.4 Trilhões</strong></div>
+            <div>Crescimento YoY: <span style="color:var(--success);">+2.8%</span></div>
+            <div>Impacto BTC: <span style="color:var(--warning);">Positivo</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GUERRA -->
+    <div id="guerra" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Guerra — Timeline</h2>
+      <div class="card">
+        <div class="timeline" id="warTimeline">
+          <div class="timeline-item"><div class="timeline-date">Jun 2026</div><div class="timeline-text">Tensões Israel-Irã escalam após novos ataques na Síria.</div></div>
+          <div class="timeline-item"><div class="timeline-date">Mai 2026</div><div class="timeline-text">Rússia intensifica ofensiva no leste da Ucrânia.</div></div>
+          <div class="timeline-item"><div class="timeline-date">Abr 2026</div><div class="timeline-text">EUA impõem novas sanções à China por questões tecnológicas.</div></div>
+          <div class="timeline-item"><div class="timeline-date">Mar 2026</div><div class="timeline-text">Conflito no Sudão gera crise humanitária regional.</div></div>
+          <div class="timeline-item"><div class="timeline-date">Fev 2026</div><div class="timeline-text">Coreia do Norte realiza novos testes de mísseis balísticos.</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><span class="card-title">BTC Tracker por Evento</span></div>
+        <div style="font-size:12px;line-height:2;">
+          <div>Escalada Israel-Irã: BTC <span style="color:var(--success);">+8.2%</span> em 48h</div>
+          <div>Sanções EUA-China: BTC <span style="color:var(--success);">+4.5%</span></div>
+          <div>Ofensiva Rússia: BTC <span style="color:var(--danger);">-2.1%</span></div>
+          <div>Testes Coreia do Norte: BTC <span style="color:var(--success);">+3.8%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTÍCIAS GUERRA -->
+    <div id="newsguerra" class="page">
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:16px;">Notícias Guerra</h2>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button onclick="loadWarNews('all')" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:12px;cursor:pointer;">Todas</button>
+        <button onclick="loadWarNews('middleeast')" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Oriente Médio</button>
+        <button onclick="loadWarNews('ukraine')" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Ucrânia</button>
+        <button onclick="loadWarNews('asia')" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Ásia</button>
+        <button onclick="loadWarNews('africa')" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">África</button>
+        <button onclick="loadWarNews('americas')" style="padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;">Américas</button>
+      </div>
+      <div id="warNewsList">
+        <div class="news-item"><div class="news-thumb">IMG</div><div class="news-content"><div class="news-title">Israel e Irã trocam ataques aéreos na fronteira síria</div><div class="news-meta">BBC News • 2h atrás</div></div></div>
+        <div class="news-item"><div class="news-thumb">IMG</div><div class="news-content"><div class="news-title">Rússia avança em Donetsk após semanas de bombardeios</div><div class="news-meta">Reuters • 4h atrás</div></div></div>
+        <div class="news-item"><div class="news-thumb">IMG</div><div class="news-content"><div class="news-title">China condena sanções dos EUA e ameaça retaliação comercial</div><div class="news-meta">Al Jazeera • 6h atrás</div></div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="#dashboard" class="active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dash</a>
+    <a href="#grafico" data-page="grafico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Gráfico</a>
+    <a href="#noticias" data-page="noticias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg>News</a>
+    <a href="#top100" data-page="top100"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Top100</a>
+    <a href="#macro" data-page="macro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Macro</a>
+  </nav>
+
+  <div class="chat-widget">
+    <button class="chat-btn" onclick="toggleChat()">🤖</button>
+    <div class="chat-panel" id="chatPanel">
+      <div class="chat-header"><h4>🤖 Assistente NEXUS</h4><button onclick="toggleChat()">×</button></div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-msg bot">Olá! Sou o Assistente NEXUS. Pergunte sobre BTC, ETH, SOL, FOMC, on-chain, ETFs ou geopolítica.</div>
+      </div>
+      <div class="chat-voice">
+        <button onclick="speakSummary()">🔊 Resumo do Dia</button>
+        <button onclick="toggleVoice()">🎤 Voz</button>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Pergunte algo..." onkeypress="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// NEXUS HUB v3.2 — CONFIGURAÇÃO DE API
+// ==========================================
+const API_BASE = 'https://repobackend-1-0mcq.onrender.com';
+
+async function fetchAPI(endpoint) {
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    delete data._cached; delete data._cachedAt;
+    return data;
+  } catch (e) {
+    console.error(`[API ERROR] ${endpoint}:`, e);
+    return null;
+  }
+}
+
+// ==========================================
+// ESTADO GLOBAL
+// ==========================================
+const STATE = {
+  currentPage: 'dashboard',
+  newsCat: 'crypto',
+  theme: localStorage.getItem('nexus-theme') || 'dark',
+  prices: {},
+  voiceEnabled: false
+};
+
+// ==========================================
+// NAVEGAÇÃO
+// ==========================================
+document.querySelectorAll('.sidebar nav a, .bottom-nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const page = a.dataset.page;
+    showPage(page);
+    document.querySelectorAll('.sidebar nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll(`[data-page="${page}"]`).forEach(l => l.classList.add('active'));
+  });
+});
+
+function showPage(page) {
+  STATE.currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(page);
+  if (target) target.classList.add('active');
+  window.scrollTo(0, 0);
+
+  // Carregar dados específicos da página
+  if (page === 'dashboard') { loadDashPrices(); loadDashMetrics(); loadHeatmap(); loadTrending(); loadDashRsi('1d'); }
+  if (page === 'grafico') { loadTvChart(); loadChartRsi(); }
+  if (page === 'indices') { loadIndices(); }
+  if (page === 'top100') { loadTop100(); }
+  if (page === 'noticias') { loadNews(); }
+  if (page === 'macro') { startFomcCountdown(); }
+}
+
+// ==========================================
+// DASHBOARD — PREÇOS
+// ==========================================
+const CRYPTO_MAP = {
+  bitcoin: { name: 'Bitcoin', symbol: 'BTC', icon: '₿' },
+  ethereum: { name: 'Ethereum', symbol: 'ETH', icon: 'Ξ' },
+  solana: { name: 'Solana', symbol: 'SOL', icon: '◎' },
+  'ondo-finance': { name: 'Ondo', symbol: 'ONDO', icon: 'O' },
+  aave: { name: 'Aave', symbol: 'AAVE', icon: 'A' },
+  ethena: { name: 'Ethena', symbol: 'ENA', icon: 'E' }
+};
+
+async function loadDashPrices() {
+  const data = await fetchAPI('/api/prices');
+  if (!data) return;
+
+  const container = document.getElementById('dashPrices');
+  container.innerHTML = '';
+
+  Object.entries(CRYPTO_MAP).forEach(([key, info]) => {
+    const coin = data[key];
+    if (!coin) return;
+    const price = coin.usd;
+    const change = coin.usd_24h_change || 0;
+    const isUp = change >= 0;
+    const priceStr = price >= 1000 ? `$${(price/1000).toFixed(1)}K` : `$${price.toFixed(2)}`;
+
+    container.innerHTML += `
+      <div class="crypto-card">
+        <div class="icon">${info.icon}</div>
+        <div class="name">${info.name}</div>
+        <div class="price">${priceStr}</div>
+        <div class="change ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${change.toFixed(2)}%</div>
+      </div>
+    `;
+  });
+}
+
+// ==========================================
+// TICKER
+// ==========================================
+async function loadTicker() {
+  const data = await fetchAPI('/api/ticker');
+  if (!data || !Array.isArray(data)) return;
+
+  const ticker = document.getElementById('ticker');
+  let html = '';
+  data.forEach(coin => {
+    const chg = coin.price_change_percentage_24h || 0;
+    html += `
+      <div class="ticker-item">
+        <span class="sym">${coin.symbol.toUpperCase()}</span>
+        <span class="price">$${coin.current_price.toLocaleString()}</span>
+        <span class="chg ${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%</span>
+      </div>
+    `;
+  });
+  ticker.innerHTML = html + html; // duplicar para loop infinito
+}
+
+// ==========================================
+// DASHBOARD — MÉTRICAS (FNG + GLOBAL)
+// ==========================================
+async function loadDashMetrics() {
+  const [fng, global] = await Promise.all([fetchAPI('/api/fng'), fetchAPI('/api/global')]);
+
+  // Fear & Greed
+  if (fng && fng.data && fng.data[0]) {
+    const val = parseInt(fng.data[0].value);
+    const label = fng.data[0].value_classification;
+    renderFngGauge(val, label);
+  }
+
+  // Global Stats
+  if (global && global.data) {
+    const d = global.data;
+    const mcap = d.total_market_cap?.usd || 0;
+    const vol = d.total_volume?.usd || 0;
+    const btcDom = d.market_cap_percentage?.btc || 0;
+    const ethDom = d.market_cap_percentage?.eth || 0;
+
+    document.getElementById('globalStats').innerHTML = `
+      <div>Market Cap: <strong style="color:var(--accent);">$${(mcap/1e12).toFixed(2)}T</strong></div>
+      <div>Volume 24h: <strong>$${(vol/1e9).toFixed(1)}B</strong></div>
+      <div>Criptos Ativas: <strong>${d.active_cryptocurrencies?.toLocaleString() || '—'}</strong></div>
+    `;
+
+    document.getElementById('dominance').innerHTML = `
+      <div>BTC: <strong style="color:var(--warning);">${btcDom.toFixed(1)}%</strong></div>
+      <div>ETH: <strong style="color:var(--accent);">${ethDom.toFixed(1)}%</strong></div>
+      <div>Outros: <strong>${(100 - btcDom - ethDom).toFixed(1)}%</strong></div>
+    `;
+  }
+}
+
+function renderFngGauge(value, label) {
+  const pct = value / 100;
+  const angle = -90 + (pct * 180);
+  const color = value < 25 ? 'var(--danger)' : value < 50 ? 'var(--warning)' : value < 75 ? 'var(--success)' : '#10b981';
+
+  document.getElementById('fngGauge').innerHTML = `
+    <svg viewBox="0 0 160 80">
+      <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="var(--bg3)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="url(#fngGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="${220 - (pct * 220)}"/>
+      <defs><linearGradient id="fngGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--danger)"/><stop offset="50%" stop-color="var(--warning)"/><stop offset="100%" stop-color="var(--success)"/></linearGradient></defs>
+    </svg>
+    <div class="fng-value" style="color:${color}">${value}</div>
+  `;
+  document.getElementById('fngLabel').textContent = label || '—';
+}
+
+// ==========================================
+// HEATMAP
+// ==========================================
+async function loadHeatmap() {
+  const data = await fetchAPI('/api/heatmap');
+  if (!data || !Array.isArray(data)) return;
+
+  const container = document.getElementById('heatmap');
+  container.innerHTML = '';
+
+  data.slice(0, 50).forEach(coin => {
+    const chg = coin.price_change_percentage_24h || 0;
+    const isUp = chg >= 0;
+    const intensity = Math.min(Math.abs(chg) / 10, 1);
+    const bg = isUp 
+      ? `rgba(34,197,94,${0.15 + intensity * 0.6})` 
+      : `rgba(239,68,68,${0.15 + intensity * 0.6})`;
+
+    container.innerHTML += `
+      <div class="heatmap-item" style="background:${bg};color:${isUp ? '#22c55e' : '#ef4444'};">
+        <div class="h-name">${coin.symbol.toUpperCase()}</div>
+        <div>${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%</div>
+      </div>
+    `;
+  });
+}
+
+// ==========================================
+// TRENDING
+// ==========================================
+async function loadTrending() {
+  const data = await fetchAPI('/api/trending');
+  if (!data || !data.coins) return;
+
+  const container = document.getElementById('trending');
+  container.innerHTML = data.coins.slice(0, 5).map(c => {
+    const coin = c.item;
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-weight:600;">${coin.name} (${coin.symbol})</span>
+      <span style="color:var(--accent);">#${coin.market_cap_rank}</span>
+    </div>`;
+  }).join('');
+}
+
+// ==========================================
+// RSI
+// ==========================================
+async function loadDashRsi(tf) {
+  const data = await fetchAPI(`/api/rsi?tf=${tf}`);
+  if (!data || !Array.isArray(data)) return;
+
+  const closes = data.map(k => parseFloat(k[4]));
+  const rsi = calculateRSI(closes, 14);
+  const currentRSI = rsi[rsi.length - 1];
+
+  const color = currentRSI > 70 ? 'var(--danger)' : currentRSI < 30 ? 'var(--success)' : 'var(--accent)';
+  document.getElementById('rsiChart').innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-size:48px;font-weight:800;color:${color};">${currentRSI.toFixed(1)}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px;">RSI (${tf}) — ${currentRSI > 70 ? 'Sobrecomprado' : currentRSI < 30 ? 'Sobrevendido' : 'Neutro'}</div>
+    </div>
+  `;
+}
+
+async function loadChartRsi() {
+  loadDashRsi('1d');
+  document.getElementById('chartRsi').innerHTML = document.getElementById('rsiChart').innerHTML;
+}
+
+function calculateRSI(closes, period) {
+  const rsi = [];
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = closes[i] - closes[i-1];
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period, avgLoss = losses / period;
+  rsi.push(100 - (100 / (1 + avgGain / avgLoss)));
+
+  for (let i = period + 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i-1];
+    const gain = diff > 0 ? diff : 0;
+    const loss = diff < 0 ? -diff : 0;
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    rsi.push(100 - (100 / (1 + avgGain / avgLoss)));
+  }
+  return rsi;
+}
+
+// ==========================================
+// TRADINGVIEW
+// ==========================================
+function loadTvChart() {
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  container.innerHTML = `
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=BITSTAMP:BTCUSD&interval=D&hidesidetoolbar=1&hidetoptoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&hideideas=1&theme=${STATE.theme === 'light' ? 'light' : 'dark'}&style=1&timezone=exchange&withdateranges=1&showpopupbutton=1&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&showpopupbutton=1&locale=br&uid=tradingview_chart" 
+      style="width:100%;height:100%;border:none;" allowtransparency="true" scrolling="no"></iframe>
+  `;
+}
+
+// ==========================================
+// ÍNDICES & CÂMBIO
+// ==========================================
+async function loadIndices() {
+  const data = await fetchAPI('/api/usdbrl');
+  if (!data || !data.rates) return;
+
+  const rates = data.rates;
+  const indices = [
+    { name: 'USD/BRL', value: rates.BRL?.toFixed(2) || '—', change: '+0.15%' },
+    { name: 'EUR/USD', value: (1/rates.EUR).toFixed(4) || '—', change: '-0.22%' },
+    { name: 'GBP/USD', value: (1/rates.GBP).toFixed(4) || '—', change: '+0.08%' },
+    { name: 'USD/JPY', value: rates.JPY?.toFixed(2) || '—', change: '-0.31%' },
+    { name: 'USD/CNY', value: rates.CNY?.toFixed(2) || '—', change: '+0.05%' },
+    { name: 'AUD/USD', value: (1/rates.AUD).toFixed(4) || '—', change: '+0.42%' },
+    { name: 'USD/CAD', value: rates.CAD?.toFixed(3) || '—', change: '-0.18%' },
+    { name: 'USD/CHF', value: rates.CHF?.toFixed(4) || '—', change: '+0.12%' },
+    { name: 'USD/ARS', value: rates.ARS?.toFixed(2) || '—', change: '+0.55%' },
+    { name: 'USD/MXN', value: rates.MXN?.toFixed(2) || '—', change: '-0.08%' },
+    { name: 'USD/TRY', value: rates.TRY?.toFixed(2) || '—', change: '+1.20%' },
+    { name: 'USD/ZAR', value: rates.ZAR?.toFixed(2) || '—', change: '-0.45%' },
+    { name: 'SPX', value: '5,847.32', change: '+0.78%' },
+    { name: 'NASDAQ', value: '18,947.22', change: '+1.12%' },
+    { name: 'DOW', value: '43,112.45', change: '+0.45%' },
+    { name: 'DAX', value: '19,847.22', change: '-0.22%' },
+    { name: 'FTSE', value: '8,447.22', change: '+0.15%' },
+    { name: 'NIKKEI', value: '38,947.22', change: '-0.55%' },
+    { name: 'OURO', value: '$2,847.50', change: '+0.32%' },
+    { name: 'PETRÓLEO', value: '$74.22', change: '-1.15%' }
+  ];
+
+  const container = document.getElementById('indicesGrid');
+  container.innerHTML = indices.map(i => `
+    <div class="card">
+      <div class="card-header"><span class="card-title">${i.name}</span></div>
+      <div style="font-size:22px;font-weight:700;margin:8px 0;">${i.value}</div>
+      <div style="font-size:12px;color:${i.change.includes('+') ? 'var(--success)' : 'var(--danger)'}">${i.change}</div>
+    </div>
+  `).join('');
+}
+
+// ==========================================
+// TOP 100
+// ==========================================
+async function loadTop100() {
+  const data = await fetchAPI('/api/top100');
+  if (!data || !Array.isArray(data)) return;
+
+  const tbody = document.querySelector('#top100Table tbody');
+  tbody.innerHTML = data.map((coin, i) => {
+    const chg24 = coin.price_change_percentage_24h || 0;
+    const chg7d = coin.price_change_percentage_7d_in_currency || 0;
+    const isUp24 = chg24 >= 0;
+    const isUp7d = chg7d >= 0;
+
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="display:flex;align-items:center;gap:8px;">
+        <img src="${coin.image}" style="width:20px;height:20px;border-radius:50%;" onerror="this.style.display='none'">
+        <span style="font-weight:600;">${coin.name}</span>
+        <span style="color:var(--text2);font-size:11px;">${coin.symbol.toUpperCase()}</span>
+      </td>
+      <td style="font-weight:600;">$${coin.current_price.toLocaleString()}</td>
+      <td class="${isUp24 ? 'up' : 'down'}">${isUp24 ? '+' : ''}${chg24.toFixed(1)}%</td>
+      <td class="${isUp7d ? 'up' : 'down'}">${isUp7d ? '+' : ''}${chg7d.toFixed(1)}%</td>
+      <td>$${(coin.market_cap/1e9).toFixed(1)}B</td>
+      <td>$${(coin.total_volume/1e6).toFixed(0)}M</td>
+    </tr>`;
+  }).join('');
+}
+
+// ==========================================
+// NOTÍCIAS
+// ==========================================
+async function loadNews() {
+  const data = await fetchAPI(`/api/news/${STATE.newsCat}`);
+  if (!data || !Array.isArray(data)) return;
+
+  const container = document.getElementById('newsList');
+  container.innerHTML = data.map(n => `
+    <div class="news-item">
+      <div class="news-thumb">📰</div>
+      <div class="news-content">
+        <div class="news-title"><a href="${n.link}" target="_blank" style="color:var(--text);text-decoration:none;">${n.title}</a></div>
+        <div class="news-meta">${n.source} • ${new Date(n.pubDate).toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadWarNews(region) {
+  // Mock por enquanto — RSS de guerra já disponível via /api/news/war
+  loadNews(); // reutiliza o feed de guerra
+}
+
+// ==========================================
+// MACRO — FOMC COUNTDOWN
+// ==========================================
+function startFomcCountdown() {
+  const nextFomc = new Date('2026-06-18T14:00:00-04:00'); // Próximo FOMC estimado
+
+  function update() {
+    const now = new Date();
+    const diff = nextFomc - now;
+    if (diff <= 0) { document.getElementById('fomcCountdown').innerHTML = '<div style="font-size:18px;font-weight:700;color:var(--accent);">REUNIÃO EM ANDAMENTO</div>'; return; }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    document.getElementById('cdD').textContent = String(d).padStart(2, '0');
+    document.getElementById('cdH').textContent = String(h).padStart(2, '0');
+    document.getElementById('cdM').textContent = String(m).padStart(2, '0');
+    document.getElementById('cdS').textContent = String(s).padStart(2, '0');
+  }
+
+  update();
+  setInterval(update, 1000);
+}
+
+// ==========================================
+// ON-CHAIN RISK GAUGE
+// ==========================================
+function renderRiskGauge() {
+  const value = 45; // Mock
+  const pct = value / 100;
+  const angle = -90 + (pct * 180);
+  const color = value < 25 ? 'var(--success)' : value < 50 ? 'var(--warning)' : value < 75 ? '#f97316' : 'var(--danger)';
+  const label = value < 25 ? 'Baixo' : value < 50 ? 'Médio' : value < 75 ? 'Alto' : 'Extremo';
+
+  document.getElementById('riskGauge').innerHTML = `
+    <svg viewBox="0 0 140 70">
+      <path d="M 10 70 A 60 60 0 0 1 130 70" fill="none" stroke="var(--bg3)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 10 70 A 60 60 0 0 1 130 70" fill="none" stroke="url(#riskGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="188" stroke-dashoffset="${188 - (pct * 188)}"/>
+      <defs><linearGradient id="riskGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="var(--success)"/><stop offset="33%" stop-color="var(--warning)"/><stop offset="66%" stop-color="#f97316"/><stop offset="100%" stop-color="var(--danger)"/></linearGradient></defs>
+    </svg>
+    <div class="risk-value" style="color:${color}">${value}</div>
+  `;
+  document.getElementById('riskLabel').textContent = label;
+}
+
+// ==========================================
+// CHAT IA
+// ==========================================
+function toggleChat() {
+  document.getElementById('chatPanel').classList.toggle('open');
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const body = document.getElementById('chatBody');
+  body.innerHTML += `<div class="chat-msg user">${msg}</div>`;
+  input.value = '';
+  body.scrollTop = body.scrollHeight;
+
+  // Resposta simulada
+  setTimeout(() => {
+    const lower = msg.toLowerCase();
+    let reply = 'Não tenho informações específicas sobre isso no momento. Tente perguntar sobre BTC, ETH, SOL, FOMC, on-chain ou ETFs.';
+
+    if (lower.includes('btc') || lower.includes('bitcoin')) reply = 'BTC está em tendência de alta com suporte em $102K e resistência em $108K. O RSI diário está em 62, indicando momentum positivo sem sobrecompra.';
+    else if (lower.includes('eth') || lower.includes('ethereum')) reply = 'ETH consolidou acima de $2.5K com volume crescente. O upgrade Pectra está agendado para Q3 2026, o que pode impulsionar o preço.';
+    else if (lower.includes('sol') || lower.includes('solana')) reply = 'SOL mostra força relativa com alta de 5.67% nas últimas 24h. A rede processou 65M transações ontem com 99.9% de uptime.';
+    else if (lower.includes('fomc') || lower.includes('fed') || lower.includes('juros')) reply = 'O próximo FOMC é em 18 de junho. O mercado precifica 85% de chance de manutenção da taxa em 5.25-5.50%. A inflação core PCE está em 2.8% YoY.';
+    else if (lower.includes('on-chain') || lower.includes('onchain')) reply = 'MVRV Z-Score em 2.14 indica mercado em zona de valorização, mas não bolha. Exchange reserves em mínimas históricas (2.3M BTC) = holders fortes.';
+    else if (lower.includes('etf')) reply = 'ETFs de BTC tiveram fluxo positivo de +$312M ontem. ETFs de ETH com +$98M. SOL ETFs ainda em processo de aprovação na SEC.';
+    else if (lower.includes('guerra') || lower.includes('israel') || lower.includes('irã')) reply = 'Tensões Israel-Irã escalaram. BTC reagiu com +8.2% em 48h após o evento. Ouro também subiu 2.1%. Flight-to-quality em andamento.';
+    else if (lower.includes('previs') || lower.includes('preço')) reply = 'Com base nos dados técnicos atuais: BTC pode testar $110K em 30 dias se mantiver acima de $102K. ETH tem alvo em $2.8K. SOL pode romper $155.';
+
+    body.innerHTML += `<div class="chat-msg bot">${reply}</div>`;
+    body.scrollTop = body.scrollHeight;
+
+    if (STATE.voiceEnabled) speakText(reply);
+  }, 800);
+}
+
+function speakSummary() {
+  const summary = 'Resumo do dia: Bitcoin está em $105.420 com alta de 2.34%. Ethereum em $2.520 com queda de 1.12%. Solana se destaca com alta de 5.67%. O índice Fear and Greed está em 65, indicando ganância. O próximo FOMC é em 12 dias. Tensões geopolíticas no Oriente Médio impulsionam o ouro e o Bitcoin.';
+  speakText(summary);
+}
+
+function toggleVoice() {
+  STATE.voiceEnabled = !STATE.voiceEnabled;
+  alert(STATE.voiceEnabled ? '🔊 Síntese de voz ativada' : '🔇 Síntese de voz desativada');
+}
+
+function speakText(text) {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'pt-BR';
+  utter.rate = 1.1;
+  utter.pitch = 1;
+  window.speechSynthesis.speak(utter);
+}
+
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.setAttribute('data-theme', STATE.theme);
+  document.getElementById('themeSelect').value = STATE.theme;
+
+  loadTicker();
+  loadDashPrices();
+  loadDashMetrics();
+  loadHeatmap();
+  loadTrending();
+  loadDashRsi('1d');
+  renderRiskGauge();
+  startFomcCountdown();
+
+  // Refresh automático
+  setInterval(() => {
+    if (STATE.currentPage === 'dashboard') {
+      loadDashPrices();
+      loadDashMetrics();
+    }
+    loadTicker();
+  }, 30000); // 30s
+});
+</script>
+</body>
+</html>
